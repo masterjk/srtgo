@@ -48,7 +48,11 @@ func (s SrtSocket) Read(b []byte) (n int, err error) {
 		if !errors.Is(err, error(EAsyncRCV)) || s.blocking {
 			return
 		}
-		s.pd.wait(ModeRead)
+		if err := s.pd.wait(ModeRead); err != nil {
+			if errors.Is(err, &SrtEpollTimeout{}) {
+				return 0, err
+			}
+		}
 		n, err = srtRecvMsg2Impl(s.socket, b, nil)
 	}
 }
